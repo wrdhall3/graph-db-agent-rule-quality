@@ -1,0 +1,6 @@
+crewai>=0.121.1
+neo4j>=5.28.1
+python-dotenv>=1.0.0
+openai>=1.75.0
+langchain>=0.3.25
+langchain-openai>=0.2.14
