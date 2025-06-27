@@ -92,10 +92,9 @@ python graphdb_ui.py
 
 # Or use the startup scripts
 ./run_graphdb_ui.sh          # Linux/Mac
-run_graphdb_ui.bat           # Windows
 ```
 
-**Access**: Open your browser to `http://localhost:5000`
+**Access**: Open your browser to `http://localhost:5050`
 
 #### Usage
 

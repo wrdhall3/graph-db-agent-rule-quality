@@ -20,11 +20,22 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Load environment variables from .env file if it exists
+if [ -f ".env" ]; then
+    echo "📄 Loading environment variables from .env file..."
+    export $(cat .env | grep -v '^#' | xargs)
+    echo "✅ Environment variables loaded from .env"
+else
+    echo "⚠️  No .env file found. Create one with your OpenAI API key:"
+    echo "   echo 'OPENAI_API_KEY=your-api-key-here' > .env"
+fi
+
 # Check if OPENAI_API_KEY is set
 if [ -z "$OPENAI_API_KEY" ]; then
     echo "⚠️  Warning: OPENAI_API_KEY environment variable not set"
-    echo "   Please set it before running the UI:"
-    echo "   export OPENAI_API_KEY='your-api-key-here'"
+    echo "   Please either:"
+    echo "   1. Create a .env file with: OPENAI_API_KEY=your-api-key-here"
+    echo "   2. Or set it manually: export OPENAI_API_KEY='your-api-key-here'"
     echo ""
 fi
 
@@ -55,7 +66,7 @@ echo ""
 echo "✅ All checks passed!"
 echo ""
 echo "🌐 Starting GraphDB Query UI..."
-echo "   URL: http://localhost:5000"
+echo "   URL: http://localhost:5050"
 echo "   Press Ctrl+C to stop"
 echo ""
 
