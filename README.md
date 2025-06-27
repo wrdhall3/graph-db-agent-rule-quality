@@ -29,7 +29,7 @@ By taking a **data lineage perspective**, the system can identify violations tha
 
 ## Applications
 
-This project consists of **two complementary applications** built using **CrewAI** as the agentic framework:
+This project consists of **three complementary applications** built using **CrewAI** as the agentic framework:
 
 ### Application 1: Graph Database Management Tool
 **Purpose**: Modify Neo4j graph database CDEs and DQ Rules using natural language
@@ -52,6 +52,182 @@ This project consists of **two complementary applications** built using **CrewAI
 - Provides system-by-system analysis and recommendations
 
 **Use Case**: Nightly validation runs to identify data quality violations across the trading pipeline
+
+### Application 3: GraphDB Query UI
+**Purpose**: Interactive web interface for querying the Neo4j graph database with natural language
+
+**Key Features**:
+- 🤖 **Natural Language Queries**: Ask questions in plain English
+- ⚡ **Direct Cypher Execution**: Write and execute Cypher queries directly
+- 📊 **Schema Visualization**: View database structure and sample data
+- 🔍 **Real-time Results**: See query results in formatted tables
+- 💡 **Example Queries**: Pre-built examples to get you started
+- 🎨 **Modern UI**: Clean, responsive design that works on all devices
+
+**Use Cases**:
+- "Show me all CDEs with their associated rules"
+- "What rules are associated with Trade Date?"
+- "Find CDEs that have NOT_NULL rules"
+- "Show me all systems and their CDEs"
+
+#### Quick Start for GraphDB Query UI
+
+**Prerequisites**:
+1. **Python 3.7+** installed
+2. **Neo4j Database** running with your graph data
+3. **OpenAI API Key** for natural language processing
+4. **Required Python packages** (see installation below)
+
+**Installation**:
+```bash
+# Install dependencies (if not already done)
+pip install -r requirements.txt
+
+# Set OpenAI API key
+export OPENAI_API_KEY="your-api-key-here"  # Linux/Mac
+set OPENAI_API_KEY=your-api-key-here       # Windows
+
+# Start the UI
+python graphdb_ui.py
+
+# Or use the startup scripts
+./run_graphdb_ui.sh          # Linux/Mac
+run_graphdb_ui.bat           # Windows
+```
+
+**Access**: Open your browser to `http://localhost:5000`
+
+#### Usage
+
+**Natural Language Queries**:
+The UI can understand questions like:
+- "Show me all CDEs"
+- "Find all data quality rules"
+- "What rules are associated with Trade Date?"
+- "Show me all systems and their CDEs"
+- "Find CDEs that have NOT_NULL rules"
+
+**Direct Cypher Queries**:
+For advanced users, you can write Cypher queries directly:
+```cypher
+MATCH (cde:CDE)-[:HAS_RULE]->(rule:DQRule)
+RETURN cde.name, rule.description
+```
+
+**Example Queries**:
+The UI includes several example queries you can click to try:
+1. **Show me all CDEs** - Lists all Critical Data Elements
+2. **Find all data quality rules** - Shows all DQ rules in the database
+3. **What rules are associated with Trade Date?** - Shows rules for a specific CDE
+4. **Show me all systems and their CDEs** - Displays system-CDE relationships
+5. **Find CDEs that have NOT_NULL rules** - Filters CDEs by rule type
+
+#### Database Schema
+
+The UI is designed to work with a Neo4j database containing:
+
+**Node Types**:
+- **CDE** (Critical Data Element): `name`, `description`, `dataType`
+- **DQRule** (Data Quality Rule): `id`, `description`, `ruleType`
+- **System**: `name`, `dbType`, `dbTable`, `description`
+
+**Relationships**:
+- `(CDE)-[:HAS_RULE]->(DQRule)` - Links CDEs to their quality rules
+- `(System)-[:HAS_CDE]->(CDE)` - Links systems to their CDEs
+
+#### API Endpoints
+
+The UI provides several REST API endpoints:
+
+**`GET /api/schema`**:
+Returns database schema information including node counts, relationship counts, and sample data.
+
+**`POST /api/query`**:
+Processes natural language queries:
+```json
+{
+  "query": "Show me all CDEs"
+}
+```
+
+**`POST /api/cypher`**:
+Executes direct Cypher queries:
+```json
+{
+  "query": "MATCH (cde:CDE) RETURN cde"
+}
+```
+
+#### Configuration
+
+**Neo4j Connection**:
+The UI uses the existing `Neo4jConnection` class from `neo4j_tools.py`. Make sure your Neo4j connection settings are correct:
+
+```python
+# Default settings in neo4j_tools.py
+uri = "bolt://localhost:7687"
+user = "neo4j"
+password = "testtest"
+database = "neo4j"
+```
+
+**OpenAI Configuration**:
+The natural language processing uses OpenAI's GPT-3.5-turbo model. You can modify the model in `graphdb_ui.py`:
+
+```python
+llm = ChatOpenAI(
+    model="gpt-3.5-turbo",  # Change to gpt-4 for better results
+    temperature=0.1,
+    api_key=os.getenv("OPENAI_API_KEY")
+)
+```
+
+#### Troubleshooting
+
+**Common Issues**:
+
+1. **"Neo4j connection failed"**
+   - Ensure Neo4j database is running
+   - Check connection settings in `neo4j_tools.py`
+   - Verify database contains the expected schema
+
+2. **"Required packages not installed"**
+   - Run `pip install -r requirements.txt`
+   - Ensure you're using Python 3.7+
+
+3. **"OpenAI API key not set"**
+   - Set the `OPENAI_API_KEY` environment variable
+   - Natural language queries won't work without this
+
+4. **"Query contains potentially dangerous operations"**
+   - The UI blocks DELETE, DROP, and REMOVE operations for safety
+   - Use direct Cypher execution for administrative operations
+
+**Debug Mode**:
+```bash
+python graphdb_ui.py --debug
+```
+
+**Logs**: Check the console output for detailed error messages and query execution logs.
+
+#### Security Considerations
+
+- The UI blocks potentially dangerous Cypher operations (DELETE, DROP, REMOVE)
+- All queries are logged for audit purposes
+- Consider running behind a reverse proxy for production use
+- Ensure proper authentication for production deployments
+
+#### Development
+
+**Project Structure**:
+```
+├── graphdb_ui.py          # Main Flask application
+├── templates/
+│   └── index.html         # UI template
+├── run_graphdb_ui.sh      # Linux/Mac startup script
+├── run_graphdb_ui.bat     # Windows startup script
+└── GRAPHDB_UI_README.md   # Detailed documentation
+```
 
 ## How to Run the Applications
 
@@ -127,6 +303,18 @@ The system provides four main options:
 
 **4. Exit**
 - Safely exit the application
+
+### Running Application 3: GraphDB Query UI
+```bash
+# Start the web interface
+python graphdb_ui.py
+
+# Or use startup scripts
+./run_graphdb_ui.sh          # Linux/Mac
+run_graphdb_ui.bat           # Windows
+```
+
+**Access**: Open your browser to `http://localhost:5000`
 
 ### Configuration
 

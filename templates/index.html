@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphDB Query Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .query-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .query-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .query-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: transform 0.2s;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .result-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .cypher-query {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .results-table th,
+        .results-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .results-table th {
+            background: #3498db;
+            color: white;
+        }
+
+        .results-table tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .schema-info {
+            background: #ecf0f1;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .schema-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .schema-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        .schema-card h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .example-queries {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .example-queries h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .example-query {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 5px 0;
+            cursor: pointer;
+            border: 1px solid #ffeaa7;
+            transition: background-color 0.2s;
+        }
+
+        .example-query:hover {
+            background: #f8f9fa;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            border-bottom-color: #3498db;
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .schema-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 GraphDB Query Interface</h1>
+            <p>Query your Neo4j database with natural language or Cypher</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Schema Information -->
+            <div class="schema-info">
+                <h3 class="section-title">📊 Database Schema</h3>
+                <div id="schema-content">
+                    <div class="loading">Loading schema information...</div>
+                </div>
+            </div>
+
+            <!-- Query Interface -->
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('natural')">Natural Language Query</div>
+                <div class="tab" onclick="switchTab('cypher')">Direct Cypher Query</div>
+            </div>
+
+            <!-- Natural Language Tab -->
+            <div id="natural-tab" class="tab-content active">
+                <div class="example-queries">
+                    <h4>💡 Example Queries</h4>
+                    <div class="example-query" onclick="setQuery('Show me all CDEs')">Show me all CDEs</div>
+                    <div class="example-query" onclick="setQuery('Find all data quality rules')">Find all data quality rules</div>
+                    <div class="example-query" onclick="setQuery('What rules are associated with Trade Date?')">What rules are associated with Trade Date?</div>
+                    <div class="example-query" onclick="setQuery('Show me all systems and their CDEs')">Show me all systems and their CDEs</div>
+                    <div class="example-query" onclick="setQuery('Find CDEs that have NOT_NULL rules')">Find CDEs that have NOT_NULL rules</div>
+                </div>
+
+                <div class="query-section">
+                    <h3 class="section-title">🤖 Natural Language Query</h3>
+                    <textarea 
+                        id="natural-query" 
+                        class="query-input" 
+                        rows="3" 
+                        placeholder="Enter your question in natural language... (e.g., 'Show me all CDEs with their associated rules')"
+                    ></textarea>
+                    <button class="button" onclick="processNaturalQuery()">🔍 Execute Query</button>
+                    <button class="button" onclick="clearResults()">🗑️ Clear Results</button>
+                </div>
+            </div>
+
+            <!-- Cypher Tab -->
+            <div id="cypher-tab" class="tab-content">
+                <div class="query-section">
+                    <h3 class="section-title">⚡ Direct Cypher Query</h3>
+                    <textarea 
+                        id="cypher-query" 
+                        class="query-input" 
+                        rows="5" 
+                        placeholder="Enter your Cypher query... (e.g., MATCH (cde:CDE) RETURN cde)"
+                    ></textarea>
+                    <button class="button" onclick="processCypherQuery()">⚡ Execute Cypher</button>
+                    <button class="button" onclick="clearResults()">🗑️ Clear Results</button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-section" class="results-section" style="display: none;">
+                <h3 class="section-title">📋 Query Results</h3>
+                <div id="results-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentTab = 'natural';
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSchemaInfo();
+        });
+
+        // Tab switching
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // Load schema information
+        async function loadSchemaInfo() {
+            try {
+                const response = await fetch('/api/schema');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('schema-content').innerHTML = 
+                        `<div class="error">Error loading schema: ${data.error}</div>`;
+                    return;
+                }
+
+                let schemaHtml = '<div class="schema-grid">';
+                
+                // Node counts
+                if (data.node_counts) {
+                    schemaHtml += `
+                        <div class="schema-card">
+                            <h4>📊 Node Types</h4>
+                            ${data.node_counts.map(node => 
+                                `<div>${node.labels.join(', ')}: ${node.count}</div>`
+                            ).join('')}
+                        </div>
+                    `;
+                }
+
+                // Relationship counts
+                if (data.relationship_counts) {
+                    schemaHtml += `
+                        <div class="schema-card">
+                            <h4>🔗 Relationships</h4>
+                            ${data.relationship_counts.map(rel => 
+                                `<div>${rel.type}: ${rel.count}</div>`
+                            ).join('')}
+                        </div>
+                    `;
+                }
+
+                // Sample CDEs
+                if (data.sample_cdes) {
+                    schemaHtml += `
+                        <div class="schema-card">
+                            <h4>📝 Sample CDEs</h4>
+                            ${data.sample_cdes.map(cde => 
+                                `<div><strong>${cde.name}</strong> (${cde.dataType})</div>`
+                            ).join('')}
+                        </div>
+                    `;
+                }
+
+                // Sample Rules
+                if (data.sample_rules) {
+                    schemaHtml += `
+                        <div class="schema-card">
+                            <h4>✅ Sample DQ Rules</h4>
+                            ${data.sample_rules.map(rule => 
+                                `<div><strong>${rule.id}</strong>: ${rule.description}</div>`
+                            ).join('')}
+                        </div>
+                    `;
+                }
+
+                schemaHtml += '</div>';
+                document.getElementById('schema-content').innerHTML = schemaHtml;
+
+            } catch (error) {
+                document.getElementById('schema-content').innerHTML = 
+                    `<div class="error">Error loading schema: ${error.message}</div>`;
+            }
+        }
+
+        // Process natural language query
+        async function processNaturalQuery() {
+            const query = document.getElementById('natural-query').value.trim();
+            if (!query) {
+                alert('Please enter a query');
+                return;
+            }
+
+            showLoading();
+            
+            try {
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                displayError('Error processing query: ' + error.message);
+            }
+        }
+
+        // Process direct Cypher query
+        async function processCypherQuery() {
+            const query = document.getElementById('cypher-query').value.trim();
+            if (!query) {
+                alert('Please enter a Cypher query');
+                return;
+            }
+
+            showLoading();
+            
+            try {
+                const response = await fetch('/api/cypher', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+                displayCypherResults(data, query);
+            } catch (error) {
+                displayError('Error executing Cypher query: ' + error.message);
+            }
+        }
+
+        // Display results
+        function displayResults(data) {
+            const resultsSection = document.getElementById('results-section');
+            const resultsContent = document.getElementById('results-content');
+            
+            let html = '';
+
+            if (data.error) {
+                html = `<div class="error">❌ Error: ${data.error}</div>`;
+            } else {
+                html = `
+                    <div class="result-card">
+                        <div class="result-title">🔍 Natural Language Query</div>
+                        <div>${data.natural_query}</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-title">⚡ Generated Cypher Query</div>
+                        <div class="cypher-query">${data.cypher_query}</div>
+                    </div>
+                `;
+
+                if (data.results.error) {
+                    html += `<div class="error">❌ Query Error: ${data.results.error}</div>`;
+                } else if (data.results.success) {
+                    html += `
+                        <div class="result-card">
+                            <div class="result-title">📊 Results (${data.results.count} records)</div>
+                            ${formatResults(data.results.results)}
+                        </div>
+                    `;
+                }
+            }
+
+            resultsContent.innerHTML = html;
+            resultsSection.style.display = 'block';
+        }
+
+        // Display Cypher results
+        function displayCypherResults(data, originalQuery) {
+            const resultsSection = document.getElementById('results-section');
+            const resultsContent = document.getElementById('results-content');
+            
+            let html = `
+                <div class="result-card">
+                    <div class="result-title">⚡ Cypher Query</div>
+                    <div class="cypher-query">${originalQuery}</div>
+                </div>
+            `;
+
+            if (data.error) {
+                html += `<div class="error">❌ Error: ${data.error}</div>`;
+            } else if (data.success) {
+                html += `
+                    <div class="result-card">
+                        <div class="result-title">📊 Results (${data.count} records)</div>
+                        ${formatResults(data.results)}
+                    </div>
+                `;
+            }
+
+            resultsContent.innerHTML = html;
+            resultsSection.style.display = 'block';
+        }
+
+        // Format results as table
+        function formatResults(results) {
+            if (!results || results.length === 0) {
+                return '<div class="success">✅ Query executed successfully. No results returned.</div>';
+            }
+
+            const firstResult = results[0];
+            const columns = Object.keys(firstResult);
+            
+            let tableHtml = '<table class="results-table"><thead><tr>';
+            columns.forEach(col => {
+                tableHtml += `<th>${col}</th>`;
+            });
+            tableHtml += '</tr></thead><tbody>';
+
+            results.forEach(result => {
+                tableHtml += '<tr>';
+                columns.forEach(col => {
+                    const value = result[col];
+                    if (value === null || value === undefined) {
+                        tableHtml += '<td><em>null</em></td>';
+                    } else if (typeof value === 'object') {
+                        tableHtml += `<td><pre>${JSON.stringify(value, null, 2)}</pre></td>`;
+                    } else {
+                        tableHtml += `<td>${value}</td>`;
+                    }
+                });
+                tableHtml += '</tr>';
+            });
+
+            tableHtml += '</tbody></table>';
+            return tableHtml;
+        }
+
+        // Display error
+        function displayError(message) {
+            const resultsSection = document.getElementById('results-section');
+            const resultsContent = document.getElementById('results-content');
+            
+            resultsContent.innerHTML = `<div class="error">❌ ${message}</div>`;
+            resultsSection.style.display = 'block';
+        }
+
+        // Show loading state
+        function showLoading() {
+            const resultsSection = document.getElementById('results-section');
+            const resultsContent = document.getElementById('results-content');
+            
+            resultsContent.innerHTML = '<div class="loading">⏳ Processing query...</div>';
+            resultsSection.style.display = 'block';
+        }
+
+        // Clear results
+        function clearResults() {
+            document.getElementById('results-section').style.display = 'none';
+            document.getElementById('natural-query').value = '';
+            document.getElementById('cypher-query').value = '';
+        }
+
+        // Set example query
+        function setQuery(query) {
+            document.getElementById('natural-query').value = query;
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey || event.metaKey) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    if (currentTab === 'natural') {
+                        processNaturalQuery();
+                    } else {
+                        processCypherQuery();
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> 
